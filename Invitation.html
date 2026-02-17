@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>晚宴邀請函</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --envelope-color: #1e293b; /* 深藍色信封 */
+            --paper-color: #fdfaf0;    /* 米白色信紙 */
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
+            background-color: #000;
+        }
+
+        /* 核心背景層 */
+        #bg-root {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+        }
+
+        /* 遮罩：確保在強光背景下信封依然清晰 */
+        .bg-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .scene {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 2000px;
+            z-index: 10;
+            cursor: pointer;
+        }
+
+        .envelope-wrapper {
+            position: relative;
+            width: 300px;
+            height: 420px;
+            transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            filter: drop-shadow(0 25px 60px rgba(0,0,0,0.8));
+            transform-style: preserve-3d;
+        }
+
+        @keyframes envelope-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .floating {
+            animation: envelope-float 3.5s ease-in-out infinite;
+        }
+
+        .envelope-front {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 85%;
+            background-color: var(--envelope-color);
+            border-radius: 4px;
+            z-index: 20;
+            box-shadow: inset 0 -5px 20px rgba(0,0,0,0.4);
+        }
+
+        .envelope-front::after {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 64px;
+            height: 32px;
+            background-color: var(--paper-color);
+            border-radius: 0 0 40px 40px;
+            z-index: 21;
+        }
+
+        .letter {
+            position: absolute;
+            bottom: 12%;
+            left: 5%;
+            width: 90%;
+            height: 82%;
+            background-color: var(--paper-color);
+            z-index: 15;
+            padding: 35px 25px;
+            box-sizing: border-box;
+            transition: all 1.2s cubic-bezier(0.6, -0.28, 0.735, 0.045);
+            transform-origin: center bottom;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .opened .envelope-wrapper {
+            transform: translateY(120vh) scale(0.7);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .opened .letter {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 94vw;
+            height: 88vh;
+            max-width: 500px;
+            max-height: 800px;
+            transform: translate(-50%, -50%) scale(1);
+            z-index: 100;
+            border-radius: 4px;
+            overflow-y: auto;
+            padding: 50px 30px;
+        }
+
+        .letter-content {
+            opacity: 0;
+            width: 100%;
+            transition: opacity 0.8s 0.7s;
+            text-align: center;
+            color: #1a1a1a;
+        }
+
+        .opened .letter-content {
+            opacity: 1;
+        }
+
+        .tap-hint {
+            position: absolute;
+            bottom: 50px;
+            color: white;
+            font-size: 0.9rem;
+            letter-spacing: 0.5em;
+            text-transform: uppercase;
+            text-shadow: 0 2px 15px rgba(0,0,0,0.8);
+            z-index: 30;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .opened .tap-hint { opacity: 0; }
+    </style>
+</head>
+<body>
+
+    <div id="bg-root"></div>
+    <div class="bg-overlay"></div>
+
+    <div id="app" class="scene">
+        <div id="envelope-box" class="envelope-wrapper floating">
+            <div id="letter" class="letter">
+                <div class="letter-content">
+                    <h2 class="text-3xl font-serif tracking-[0.5em] mb-8 text-gray-800">晚宴邀請</h2>
+                    <hr class="w-12 border-gray-400 mx-auto mb-10">
+                    
+                    <p class="text-lg mb-8 tracking-widest font-medium">親愛的嘉賓：</p>
+                    
+                    <div class="leading-[2.4] text-gray-600 mb-12 tracking-widest text-base">
+                        在這充滿詩意的夜晚，<br>
+                        我們誠摯地邀請您撥冗蒞臨，<br>
+                        於戶外草地一同享受美食與星光的饗宴。<br>
+                        您的光臨將使這場晚宴更添光彩。
+                    </div>
+
+                    <div class="space-y-4 mb-12 bg-gray-50 p-6 rounded-sm text-sm text-left w-full border border-gray-100 shadow-sm">
+                        <p class="flex justify-between border-b border-gray-100 pb-2"><span><strong>日期</strong></span> <span>2026年3月15日</span></p>
+                        <p class="flex justify-between border-b border-gray-100 pb-2"><span><strong>時間</strong></span> <span>18:00 - 21:00</span></p>
+                        <p class="flex justify-between"><span><strong>地點</strong></span> <span>雲林．古宅後院</span></p>
+                    </div>
+
+                    <button id="rsvp-btn" class="bg-[#1e293b] text-white px-12 py-4 rounded-none shadow-xl hover:bg-gray-800 transition-all uppercase tracking-widest text-sm">
+                        確認出席
+                    </button>
+                    
+                    <p class="mt-16 text-[10px] text-gray-400 italic tracking-widest">RESERVATION REQUIRED BY MARCH 1ST</p>
+                </div>
+            </div>
+            <div class="envelope-front"></div>
+        </div>
+        <div class="tap-hint">Tap to open</div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            const bgRoot = document.getElementById('bg-root');
+            const app = document.getElementById('app');
+            const envelopeBox = document.getElementById('envelope-box');
+            const rsvpBtn = document.getElementById('rsvp-btn');
+            let isOpened = false;
+
+            // Google Drive 圖片轉換為直接顯示連結
+            const driveId = "15tRMNNWixXS0zIKJw7EUv88Sc1WrKov8";
+            const directLink = `https://lh3.googleusercontent.com/u/0/d/${driveId}=w1920-h1080-iv1`;
+
+            const img = new Image();
+            img.src = directLink;
+            
+            img.onload = function() {
+                bgRoot.style.backgroundImage = `url('${directLink}')`;
+                bgRoot.style.opacity = '1';
+                console.log("Drive image loaded");
+            };
+            
+            img.onerror = function() {
+                // 如果 Google Drive API 阻擋，嘗試另一種常見的驅動連結格式
+                const fallbackLink = `https://drive.google.com/uc?export=view&id=${driveId}`;
+                bgRoot.style.backgroundImage = `url('${fallbackLink}')`;
+                bgRoot.style.opacity = '1';
+            };
+
+            app.addEventListener('click', function(e) {
+                if (isOpened || e.target === rsvpBtn) return;
+                isOpened = true;
+                envelopeBox.classList.remove('floating');
+                app.classList.add('opened');
+            });
+
+            rsvpBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                rsvpBtn.innerText = "感謝您的回覆";
+                rsvpBtn.style.backgroundColor = "#065f46";
+            });
+        };
+    </script>
+</body>
+</html>
