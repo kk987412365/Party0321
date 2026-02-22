@@ -1,258 +1,532 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>晚宴邀請函</title>
+    <title>感應式動畫網頁 | 無縫對接優化版</title>
+
+    <!-- 引入指定的 Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=GFS+Didot&family=Geist:wght@100..900&family=Noto+Sans+HK:wght@100..900&display=swap" rel="stylesheet">
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 透過 Tailwind 設定檔定義預設字體 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Geist', '"Noto Sans HK"', 'sans-serif'],
+                        serif: ['"GFS Didot"', '"Noto Sans HK"', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
     <style>
+        /* =========================================
+           1. 變數設定 (Variables)
+           ========================================= */
         :root {
-            --envelope-color: #1e293b; /* 深藍色信封 */
-            --paper-color: #fdfaf0;    /* 米白色信紙 */
+            /* 資源定義 */
+            --bg-url: url('https://lh3.googleusercontent.com/d/1YR0MvWCDkmVLMtpY-apEBS-zezC1dixp');
+            --envelope-url: url('https://lh3.googleusercontent.com/d/14ZsCq33EMSr_VqeRN2FmrLo2ZQTClkaq');
+            --card-cover-url: url('https://lh3.googleusercontent.com/d/15eVClMbi5EDtLXi13wi5ur3TXQDzwCMI');
+            --card-inside-url: url('https://lh3.googleusercontent.com/d/1Qt5kx4SLeEQr8aSYy1BUB8Gn13i040n1');
+            --card-back-url: url('https://lh3.googleusercontent.com/d/1jKFX4f_O5wNOb6e04O9NQBKnm4WYJqrj');
+            --page-b-bg: url('https://lh3.googleusercontent.com/d/1wi9o007G8oSQpI6cOdNq_3KDmfJJaxxX');
+            
+            /* 顏色與比例 */
+            --minimal-red: #c0392b;
+            --base-scale: 133vmin; 
+            --envelope-w: var(--base-scale);
+            --card-w: calc(var(--base-scale) * 0.475); 
+
+            /* 動畫曲線 */
+            --ease-expo: cubic-bezier(0.19, 1, 0.22, 1);
         }
 
+        /* =========================================
+           2. 基礎設定 (Base)
+           ========================================= */
         body, html {
             margin: 0;
             padding: 0;
             height: 100%;
             width: 100%;
             overflow: hidden;
-            font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
-            background-color: #000;
+            background-color: #e6e2db; 
+            font-family: 'Geist', 'Noto Sans HK', sans-serif;
         }
 
-        /* 核心背景層 */
-        #bg-root {
+        /* =========================================
+           3. 3D 場景與卡片結構 (3D Scene)
+           ========================================= */
+        .main-background {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
+            inset: 0;
+            background: var(--bg-url) center / cover no-repeat;
             z-index: 1;
-            opacity: 0;
-            transition: opacity 1.5s ease-in-out;
-        }
-
-        /* 遮罩：確保在強光背景下信封依然清晰 */
-        .bg-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.2);
-            z-index: 2;
-            pointer-events: none;
         }
 
         .scene {
             position: relative;
+            z-index: 10;
             width: 100%;
-            height: 100vh;
+            height: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
-            perspective: 2000px;
-            z-index: 10;
-            cursor: pointer;
+            perspective: 4000px; 
         }
 
-        .envelope-wrapper {
+        .envelope {
+            position: absolute;
+            width: var(--envelope-w);
+            aspect-ratio: 1 / 1.5;
+            background: var(--envelope-url) no-repeat center / contain;
+            z-index: 70; 
+            cursor: pointer;
+            transition: transform 1.5s var(--ease-expo), opacity 1.2s ease;
+            filter: drop-shadow(0 40px 80px rgba(0,0,0,0.6));
+            will-change: transform;
+        }
+
+        .card-container {
+            position: absolute;
+            width: var(--card-w);
+            aspect-ratio: 1 / 1.4;
+            z-index: 50; 
+            transform: translateY(-1px);
+        }
+
+        .card-inner {
             position: relative;
-            width: 300px;
-            height: 420px;
-            transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1);
-            filter: drop-shadow(0 25px 60px rgba(0,0,0,0.8));
+            width: 100%;
+            height: 100%;
             transform-style: preserve-3d;
         }
 
-        @keyframes envelope-float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
-        }
-
-        .floating {
-            animation: envelope-float 3.5s ease-in-out infinite;
-        }
-
-        .envelope-front {
+        .card-inside {
             position: absolute;
-            bottom: 0;
-            width: 100%;
-            height: 85%;
-            background-color: var(--envelope-color);
-            border-radius: 4px;
-            z-index: 20;
-            box-shadow: inset 0 -5px 20px rgba(0,0,0,0.4);
+            inset: 0; /* 簡化 top, left, width, height */
+            background: var(--card-inside-url) no-repeat center / 100% 100%;
+            z-index: 1;
+            border-radius: 0 6px 6px 0;
+            transform: translateZ(0); 
         }
 
-        .envelope-front::after {
-            content: '';
+        .card-cover {
             position: absolute;
-            top: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 64px;
-            height: 32px;
-            background-color: var(--paper-color);
-            border-radius: 0 0 40px 40px;
-            z-index: 21;
+            inset: 0;
+            background: var(--card-cover-url) no-repeat center / 100% 100%;
+            z-index: 2;
+            transform-origin: left center;
+            transition: transform 2s var(--ease-expo) 0.3s;
+            transform-style: preserve-3d;
+            border-radius: 6px;
+            will-change: transform;
         }
 
-        .letter {
+        .card-cover-back {
             position: absolute;
-            bottom: 12%;
-            left: 5%;
-            width: 90%;
-            height: 82%;
-            background-color: var(--paper-color);
-            z-index: 15;
-            padding: 35px 25px;
-            box-sizing: border-box;
-            transition: all 1.2s cubic-bezier(0.6, -0.28, 0.735, 0.045);
-            transform-origin: center bottom;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            border: 1px solid rgba(0,0,0,0.05);
+            inset: 0;
+            background: var(--card-back-url) no-repeat center / 100% 100%;
+            transform: rotateY(180deg);
+            backface-visibility: hidden;
+            border-radius: 6px 0 0 6px;
         }
 
-        .opened .envelope-wrapper {
-            transform: translateY(120vh) scale(0.7);
+        /* =========================================
+           4. 動態狀態變化 (Interactions & States)
+           ========================================= */
+        .is-idle .card-container {
+            animation: bounce-hint 2.5s infinite ease-in-out;
+        }
+
+        @keyframes bounce-hint {
+            0%, 100% { transform: translateY(-1px); }
+            50% { transform: translateY(-15px); } 
+        }
+
+        .is-open .envelope {
+            transform: translateY(140vh) rotate(5deg);
             opacity: 0;
             pointer-events: none;
         }
 
-        .opened .letter {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            width: 94vw;
-            height: 88vh;
-            max-width: 500px;
-            max-height: 800px;
-            transform: translate(-50%, -50%) scale(1);
-            z-index: 100;
-            border-radius: 4px;
-            overflow-y: auto;
-            padding: 50px 30px;
+        .is-open .card-cover {
+            transform: rotateY(-179.5deg);
         }
 
-        .letter-content {
-            opacity: 0;
-            width: 100%;
-            transition: opacity 0.8s 0.7s;
-            text-align: center;
-            color: #1a1a1a;
-        }
-
-        .opened .letter-content {
+        .is-open .full-content {
             opacity: 1;
+            visibility: visible;
+            transition: opacity 1.2s ease 1.6s, visibility 0s 1.6s;
         }
 
-        .tap-hint {
+        /* =========================================
+           5. 全螢幕 UI 與分頁內容 (UI & Tabs)
+           ========================================= */
+        .full-content {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.8s ease, visibility 0.8s;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding-top: 70px;
+        }
+
+        .full-content-bg {
             position: absolute;
-            bottom: 50px;
-            color: white;
-            font-size: 0.9rem;
-            letter-spacing: 0.5em;
+            inset: 0;
+            background: var(--page-b-bg) center / cover no-repeat;
+            z-index: -1;
+        }
+
+        .tabs-nav {
+            flex-shrink: 0;
+            width: 100%;
+            height: 50px;
+            background: transparent;
+            display: flex;
+            justify-content: center;
+            gap: clamp(0.5rem, 4vw, 2.5rem);
+            align-items: center;
+            z-index: 110;
+        }
+
+        .tab-btn {
+            font-weight: 400;
+            color: #555;
+            cursor: pointer;
+            padding: 10px;
+            font-size: 13px;
+            position: relative;
+            letter-spacing: 2px;
             text-transform: uppercase;
-            text-shadow: 0 2px 15px rgba(0,0,0,0.8);
-            z-index: 30;
-            animation: pulse 2s infinite;
+            background: transparent;
+            border: none;
+            transition: color 0.3s ease;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+        .tab-btn:hover { color: #000; }
+        .tab-btn.active { color: var(--minimal-red); font-weight: 600; }
+
+        .tab-wrapper {
+            flex: 1;
+            padding: 10px 24px 60px;
+            overflow-y: auto;
+            background: transparent;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE/Edge */
         }
 
-        .opened .tap-hint { opacity: 0; }
+        .tab-wrapper::-webkit-scrollbar {
+            display: none; /* Chrome/Safari/Webkit */
+        }
+
+        .page-section {
+            display: none;
+            width: 100%;
+            max-width: 800px; 
+            margin: 0 auto;
+            opacity: 0;
+        }
+
+        .page-section.active {
+            display: block;
+            animation: slideUpFade 0.8s var(--ease-expo) forwards;
+        }
+
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .close-x {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: transparent;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 32px;
+            font-weight: 300;
+            cursor: pointer;
+            z-index: 150;
+            transition: transform 0.4s ease, color 0.3s ease;
+        }
+
+        .close-x:hover {
+            transform: rotate(90deg);
+            color: var(--minimal-red);
+        }
     </style>
 </head>
-<body>
+<body class="is-idle">
 
-    <div id="bg-root"></div>
-    <div class="bg-overlay"></div>
+    <div class="main-background"></div>
 
-    <div id="app" class="scene">
-        <div id="envelope-box" class="envelope-wrapper floating">
-            <div id="letter" class="letter">
-                <div class="letter-content">
-                    <h2 class="text-3xl font-serif tracking-[0.5em] mb-8 text-gray-800">晚宴邀請</h2>
-                    <hr class="w-12 border-gray-400 mx-auto mb-10">
-                    
-                    <p class="text-lg mb-8 tracking-widest font-medium">親愛的嘉賓：</p>
-                    
-                    <div class="leading-[2.4] text-gray-600 mb-12 tracking-widest text-base">
-                        在這充滿詩意的夜晚，<br>
-                        我們誠摯地邀請您撥冗蒞臨，<br>
-                        於戶外草地一同享受美食與星光的饗宴。<br>
-                        您的光臨將使這場晚宴更添光彩。
-                    </div>
-
-                    <div class="space-y-4 mb-12 bg-gray-50 p-6 rounded-sm text-sm text-left w-full border border-gray-100 shadow-sm">
-                        <p class="flex justify-between border-b border-gray-100 pb-2"><span><strong>日期</strong></span> <span>2026年3月15日</span></p>
-                        <p class="flex justify-between border-b border-gray-100 pb-2"><span><strong>時間</strong></span> <span>18:00 - 21:00</span></p>
-                        <p class="flex justify-between"><span><strong>地點</strong></span> <span>雲林．古宅後院</span></p>
-                    </div>
-
-                    <button id="rsvp-btn" class="bg-[#1e293b] text-white px-12 py-4 rounded-none shadow-xl hover:bg-gray-800 transition-all uppercase tracking-widest text-sm">
-                        確認出席
-                    </button>
-                    
-                    <p class="mt-16 text-[10px] text-gray-400 italic tracking-widest">RESERVATION REQUIRED BY MARCH 1ST</p>
+    <main class="scene" id="triggerScene">
+        <div class="card-container">
+            <div class="card-inner">
+                <div class="card-inside"></div>
+                <div class="card-cover">
+                    <div class="card-cover-back"></div>
                 </div>
             </div>
-            <div class="envelope-front"></div>
         </div>
-        <div class="tap-hint">Tap to open</div>
+        <div class="envelope" id="envelope"></div>
+    </main>
+
+    <div class="full-content" id="fullContent">
+        <div class="full-content-bg"></div>
+        <div class="close-x" id="closeBtn">✕</div>
+        
+        <nav class="tabs-nav">
+            <button class="tab-btn active" data-target="info">Detail</button>
+            <button class="tab-btn" data-target="location">Location</button>
+            <button class="tab-btn" data-target="menu">Menu</button>
+            <button class="tab-btn" data-target="dresscode">Dress Code</button>
+        </nav>
+
+        <div class="tab-wrapper" id="scrollContainer">
+            <!-- 資訊分頁 (Detail) -->
+            <section id="info" class="page-section active">
+                
+                <div class="translate-y-[10vh] pb-[10vh]">
+                    <h2 class="text-sm font-semibold mb-6 text-center text-[#c0392b] tracking-[0.3em] uppercase relative z-10">The Invitation</h2>
+                    
+                    <div class="mt-[10%]">
+                        <div class="-translate-y-[20%] -mb-[15%]">
+                            <img src="https://lh3.googleusercontent.com/d/1heQcAPPed_UOQrwaLQAdQOjbqDrQ2j1g" 
+                                 class="w-full max-w-2xl mx-auto block object-contain" alt="邀請函圖片">
+                        </div>
+
+                        <div class="text-center space-y-10 pb-16 relative z-10">
+                            <div>
+                                <h3 class="font-serif text-sm font-bold text-gray-900 mb-3 tracking-[-0.05em]">Date</h3>
+                                <p class="text-[#c0392b] text-sm tracking-[-0.05em]">21 Mar - 22 Mar 2026 (2D1N)</p>
+                            </div>
+                            <div>
+                                <h3 class="font-serif text-sm font-bold text-gray-900 mb-3 tracking-[-0.05em]">Location</h3>
+                                <p class="text-[#c0392b] text-sm tracking-[-0.05em] uppercase">NEW TAIPEI · TAOYUAN</p>
+                            </div>
+                            <div>
+                                <h3 class="font-serif text-sm font-bold text-gray-900 mb-3 tracking-[-0.05em]">Check-in/out</h3>
+                                <p class="text-[#c0392b] text-sm tracking-[-0.05em]">12 : 00 PM (21 Mar) / 5 : 00 PM (22 Mar)</p>
+                            </div>
+                            <div>
+                                <h3 class="font-serif text-sm font-bold text-gray-900 mb-3 tracking-[-0.05em]">Dinner Time</h3>
+                                <p class="text-[#c0392b] text-sm tracking-[-0.05em]">7 : 00 PM (21 Mar)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </section>
+
+            <!-- 地點分頁 (Location) -->
+            <section id="location" class="page-section">
+                <h2 class="text-sm font-semibold mb-12 text-center text-[#c0392b] tracking-[0.3em] uppercase">我愛你學田民宿</h2>
+                
+                <img src="https://lh3.googleusercontent.com/d/1KhH2DrJvoC-bEq5PFC29GgNnUpy6LeAL" 
+                     class="w-full max-w-2xl mx-auto block object-contain" alt="我愛你學田民宿">
+
+                <div class="text-center space-y-12 mt-16 pb-16 relative z-10">
+                    <div>
+                        <h3 class="font-serif text-lg font-bold text-gray-900 mb-3 tracking-[-0.05em]">Address</h3>
+                        <p class="text-[#c0392b] text-lg tracking-[-0.05em] mb-2">No. 82, Ln. 722, Wugu Rd., Xinwu Dist., Taoyuan City 327, Taiwan</p>
+                        <p class="text-[#c0392b] text-lg tracking-[-0.05em]">桃園市新屋區五谷路722巷82號</p>
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-serif text-lg font-bold text-gray-900 mb-4 tracking-[-0.05em]">Map</h3>
+                        <a href="https://maps.app.goo.gl/Vedg175uAHdVkMYYA" target="_blank" rel="noopener noreferrer" 
+                           class="inline-block bg-[#e60012] text-white px-10 py-2 text-lg tracking-wider hover:bg-red-700 transition-colors shadow-sm">
+                            Click Here
+                        </a>
+                    </div>
+
+                    <div>
+                        <h3 class="font-serif text-lg font-bold text-gray-900 mb-3 tracking-[-0.05em]">Transport</h3>
+                        <p class="text-[#c0392b] text-lg tracking-[-0.05em]">桃園機場 > Uber ( ~30分鐘 // ~ $NTD 1,500)</p>
+                    </div>
+
+                    <div class="pt-16">
+                        <h2 class="text-sm font-semibold mb-12 text-center text-[#c0392b] tracking-[0.3em] uppercase">Stay Arrangements</h2>
+                        
+                        <div class="max-w-sm mx-auto space-y-6">
+                            <div class="grid grid-cols-[60px_1fr] gap-6 items-center">
+                                <span class="font-serif text-lg font-bold text-gray-900 text-right">春</span>
+                                <span class="text-[#c0392b] text-lg tracking-[-0.05em] text-left">Green, 20, Momoko, Min, Su</span>
+                            </div>
+                            <div class="grid grid-cols-[60px_1fr] gap-6 items-center">
+                                <span class="font-serif text-lg font-bold text-gray-900 text-right">秋</span>
+                                <span class="text-[#c0392b] text-lg tracking-[-0.05em] text-left">耳皮, 彩, Fala</span>
+                            </div>
+                            <div class="grid grid-cols-[60px_1fr] gap-6 items-center">
+                                <span class="font-serif text-lg font-bold text-gray-900 text-right">冬</span>
+                                <span class="text-[#c0392b] text-lg tracking-[-0.05em] text-left">AL, Shadow, Sher, Lung</span>
+                            </div>
+                            <div class="grid grid-cols-[60px_1fr] gap-6 items-center">
+                                <span class="font-serif text-lg font-bold text-gray-900 text-right">豐</span>
+                                <span class="text-[#c0392b] text-lg tracking-[-0.05em] text-left">子亮, Cherry</span>
+                            </div>
+                            <div class="grid grid-cols-[60px_1fr] gap-6 items-center">
+                                <span class="font-serif text-lg font-bold text-gray-900 text-right">書</span>
+                                <span class="text-[#c0392b] text-lg tracking-[-0.05em] text-left">家姐, 肥</span>
+                            </div>
+                        </div>
+
+                        <img src="https://lh3.googleusercontent.com/d/1wGcaV0LIhn-0765iBtcHL8ICzMzAUEik" 
+                             class="w-full max-w-2xl mx-auto block object-contain mt-20" alt="住宿安排圖片">
+                    </div>
+                </div>
+            </section>
+
+            <!-- 菜單分頁 (Menu) -->
+            <section id="menu" class="page-section">
+                <!-- 1. 冷盤 -->
+                <h2 class="text-sm font-semibold mb-12 text-center text-[#c0392b] tracking-[0.3em] uppercase">冷盤</h2>
+                <img src="https://lh3.googleusercontent.com/d/1pyKW03Q4NJg0sW-h8vx8F8xCSUUfmMLK" 
+                     class="w-full max-w-2xl mx-auto block object-contain mb-12" alt="冷盤 圖片">
+                <div class="text-center space-y-6 max-w-lg mx-auto mb-20 relative z-10">
+                    <p class="font-serif text-lg text-gray-900 tracking-widest">薑汁鹹豬肉沙拉</p>
+                    <p class="font-serif text-lg text-gray-900 tracking-widest">燻肉起司拼盤</p>
+                    <p class="font-serif text-lg text-gray-900 tracking-widest">椒香檸檬中卷</p>
+                    <p class="font-serif text-lg text-gray-900 tracking-widest">低烹鮭魚乳酪塔塔</p>
+                    <p class="font-serif text-lg text-gray-900 tracking-widest">香煎干貝檸檬奶油醬</p>
+                </div>
+
+                <!-- 2. 熱菜 -->
+                <h2 class="text-sm font-semibold mb-12 text-center text-[#c0392b] tracking-[0.3em] uppercase">熱菜</h2>
+                <img src="https://lh3.googleusercontent.com/d/17bAbLLIscHHFTCiUB1MzAxdWS7Wuq52P" 
+                     class="w-full max-w-2xl mx-auto block object-contain mb-12" alt="熱菜 圖片">
+                <div class="text-center space-y-6 max-w-lg mx-auto mb-20 relative z-10">
+                    <p class="font-serif text-lg text-gray-900 tracking-widest">打拋乳酪虎斑蝦</p>
+                    <p class="font-serif text-lg text-gray-900 tracking-widest">炭烤舞菇布拉塔起司</p>
+                    <p class="font-serif text-lg text-gray-900 tracking-widest">鹹蛋黃烏魚子軟殼蟹燉飯</p>
+                </div>
+
+                <!-- 3. 湯、炭烤肉盤 -->
+                <h2 class="text-sm font-semibold mb-12 text-center text-[#c0392b] tracking-[0.3em] uppercase">湯、炭烤肉盤</h2>
+                <img src="https://lh3.googleusercontent.com/d/1ISWi60N_wn0PKB-iq3kbUnjx7l-L1Tjc" 
+                     class="w-full max-w-2xl mx-auto block object-contain mb-12" alt="湯、炭烤肉盤 圖片">
+                <div class="text-center space-y-6 max-w-lg mx-auto mb-24 relative z-10">
+                    <p class="font-serif text-lg text-gray-900 tracking-widest">松露蕈菇雞湯</p>
+                    <p class="font-serif text-lg text-gray-900 tracking-widest">木燻櫻桃鴨胸</p>
+                    <p class="font-serif text-lg text-gray-900 tracking-widest">老菜脯松露雞腿捲</p>
+                    <p class="font-serif text-lg text-gray-900 tracking-widest">炭烤美國安格斯牛嫩肩</p>
+                    <p class="font-serif text-lg text-gray-900 tracking-widest">香煎葛瑪蘭豬里肌佐白酒芝麻醬</p>
+                </div>
+
+                <!-- 4. 大量酒水供應 -->
+                <h2 class="text-sm font-semibold mb-20 text-center text-[#c0392b] tracking-[0.3em] uppercase">大量酒水供應</h2>
+            </section>
+
+            <!-- Dress Code 分頁 -->
+            <section id="dresscode" class="page-section">
+                <h2 class="text-sm font-semibold mb-12 text-center text-[#c0392b] tracking-[0.3em] uppercase">Dress Code</h2>
+                
+                <img src="https://lh3.googleusercontent.com/d/1noZmnMDnx9S8nbh_avi0b3UjCoaPQvMQ" 
+                     class="w-full max-w-2xl mx-auto block object-contain mb-12" alt="Dress Code 參考圖">
+
+                <div class="text-center space-y-6 max-w-lg mx-auto pb-16 relative z-10 px-4">
+                    <p class="font-serif text-lg text-gray-900 tracking-widest leading-loose">
+                        無特別Dress code, 如果唔落雨會好似上圖咁 outdoor dinner。大家自己 feel 下著咩。<br><br>
+                        當日晚上天氣大概會15-18度左右，請暴露的女人/男人們要著件外套。
+                    </p>
+                </div>
+            </section>
+        </div>
     </div>
 
     <script>
-        window.onload = function() {
-            const bgRoot = document.getElementById('bg-root');
-            const app = document.getElementById('app');
-            const envelopeBox = document.getElementById('envelope-box');
-            const rsvpBtn = document.getElementById('rsvp-btn');
-            let isOpened = false;
-
-            // Google Drive 圖片轉換為直接顯示連結
-            const driveId = "15tRMNNWixXS0zIKJw7EUv88Sc1WrKov8";
-            const directLink = `https://lh3.googleusercontent.com/u/0/d/${driveId}=w1920-h1080-iv1`;
-
-            const img = new Image();
-            img.src = directLink;
-            
-            img.onload = function() {
-                bgRoot.style.backgroundImage = `url('${directLink}')`;
-                bgRoot.style.opacity = '1';
-                console.log("Drive image loaded");
-            };
-            
-            img.onerror = function() {
-                // 如果 Google Drive API 阻擋，嘗試另一種常見的驅動連結格式
-                const fallbackLink = `https://drive.google.com/uc?export=view&id=${driveId}`;
-                bgRoot.style.backgroundImage = `url('${fallbackLink}')`;
-                bgRoot.style.opacity = '1';
+        // 將邏輯封裝在 IIFE 內，避免污染全域變數
+        (function() {
+            // 1. 設定檔常數 (Configuration)
+            const CONFIG = {
+                STATE_IDLE: 'is-idle',
+                STATE_OPEN: 'is-open',
+                CLASS_ACTIVE: 'active',
+                DEFAULT_TAB: 'info',
+                CLOSE_DELAY_MS: 2000
             };
 
-            app.addEventListener('click', function(e) {
-                if (isOpened || e.target === rsvpBtn) return;
-                isOpened = true;
-                envelopeBox.classList.remove('floating');
-                app.classList.add('opened');
-            });
+            // 2. DOM 元素快取 (Cache DOM Elements)
+            const DOM = {
+                body: document.body,
+                envelope: document.getElementById('envelope'),
+                closeBtn: document.getElementById('closeBtn'),
+                scrollContainer: document.getElementById('scrollContainer'),
+                triggerScene: document.getElementById('triggerScene'),
+                tabBtns: document.querySelectorAll('.tab-btn'),
+                sections: document.querySelectorAll('.page-section')
+            };
 
-            rsvpBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                rsvpBtn.innerText = "感謝您的回覆";
-                rsvpBtn.style.backgroundColor = "#065f46";
-            });
-        };
+            // 3. 核心邏輯控制器 (App Controller)
+            const App = {
+                openCard() {
+                    if (!DOM.body.classList.contains(CONFIG.STATE_IDLE)) return;
+                    DOM.body.classList.replace(CONFIG.STATE_IDLE, CONFIG.STATE_OPEN);
+                },
+
+                closeCard() {
+                    DOM.body.classList.remove(CONFIG.STATE_OPEN);
+                    
+                    // 等待動畫結束後，還原初始狀態與分頁
+                    setTimeout(() => {
+                        DOM.body.classList.add(CONFIG.STATE_IDLE);
+                        App.switchPage(CONFIG.DEFAULT_TAB);
+                    }, CONFIG.CLOSE_DELAY_MS); 
+                },
+
+                switchPage(targetId) {
+                    DOM.tabBtns.forEach(btn => {
+                        btn.classList.toggle(CONFIG.CLASS_ACTIVE, btn.dataset.target === targetId);
+                    });
+                    
+                    DOM.sections.forEach(sec => {
+                        sec.classList.toggle(CONFIG.CLASS_ACTIVE, sec.id === targetId);
+                    });
+                    
+                    DOM.scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+
+                initEvents() {
+                    DOM.envelope.addEventListener('click', App.openCard);
+                    
+                    DOM.triggerScene.addEventListener('click', (e) => {
+                        if (e.target === e.currentTarget) App.openCard();
+                    });
+
+                    DOM.closeBtn.addEventListener('click', (e) => { 
+                        e.stopPropagation(); 
+                        App.closeCard(); 
+                    });
+                    
+                    DOM.tabBtns.forEach(btn => {
+                        btn.addEventListener('click', () => App.switchPage(btn.dataset.target));
+                    });
+                }
+            };
+
+            // 4. 啟動事件監聽
+            App.initEvents();
+        })();
     </script>
 </body>
 </html>
